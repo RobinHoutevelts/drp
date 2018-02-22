@@ -111,7 +111,7 @@ trap onExit EXIT SIGINT
 provdir="$HOME/dev/server"
 dumps="$src/drp/dumps"
 syncs="$src/drp/sync"
-rsync_args="--exclude 'drp/' --exclude '.git' --exclude '*.sql.gz' --exclude '*.vim-mru' --exclude '.vim-tags'"
+rsync_args="--exclude 'drp/' --exclude '.git' --exclude '*.sql.gz' --exclude '*.vim-mru' --exclude '.vim-tags' --exclude '.idea'"
 
 if [ "$ignore" == "" ]; then
     ignore=""
@@ -129,7 +129,7 @@ servicedir="$HOME/.config/systemd/user"
 has_systemctl=$(systemctl --user &>/dev/null; echo $?)
 
 if [ "$host" == "" ]; then
-    host="$sitekey.friz.pro"
+    host="$sitekey.dev.kzen.pro"
 fi
 
 prov="$provdir/servers/$host/"provision*.sh
