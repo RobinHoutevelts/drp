@@ -171,7 +171,7 @@ provision () {
     cd "$provdir"
 
     if [ ! -f $prov ]; then
-        ./droplet.sh "$host" ams3 $droplet_size "$image" -y
+        ./droplet.sh "$host" ams3 $droplet_size "$image"
     fi
 
     cd "$src"
@@ -239,7 +239,7 @@ update_loop () {
         done &
 
         while true; do
-            sleep 1
+            sleep 0.1
             sync=$(cat "$syncs" | sort | uniq)
             if [ "$sync" == "" ]; then
                 continue
@@ -395,6 +395,11 @@ exec_remote_admin () {
 }
 
 drush () {
+    # So we can xdebug drush
+    if [ "$drupal_version" == "8" ]; then
+        exec_remote $dst/vendor/bin/drush.launcher $drush_flags --php=/usr/bin/$php -r "$dst/$drush_root" $@
+        return
+    fi
     exec_remote $php .config/composer/vendor/bin/drush.php $drush_flags --php=/usr/bin/$php -r "$dst/$drush_root" $@
 }
 
@@ -554,6 +559,13 @@ case $1 in
         u="$2"
         ssh -ttt "${u:=$user}"@$ip
         ;;
+    tunnel)
+        server_info    # Tunnel traffic. Eg drp tunnel 9000 for xdebug
+
+        rport="$2"
+        lport="$3"
+        ssh -ttt -R $rport:127.0.0.1:${lport:=$rport} "$user"@$ip
+        ;;
     eval|ev)           # Execute remote command
         shift
         exec_remote "$@"
@@ -626,6 +638,11 @@ case $1 in
     ip)                # Get server ip
         server_info
         echo "$ip";
+        ;;
+   info)               # Get all info
+        server_info
+
+        cat $info;
         ;;
     config)            # Print example config
         #! dummy, see above
