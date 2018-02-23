@@ -129,7 +129,7 @@ servicedir="$HOME/.config/systemd/user"
 has_systemctl=$(systemctl --user &>/dev/null; echo $?)
 
 if [ "$host" == "" ]; then
-    host="$sitekey.dev.kzen.pro"
+    host="$sitekey.kzen.pro"
 fi
 
 prov="$provdir/servers/$host/"provision*.sh
@@ -199,7 +199,7 @@ update_code () {
     server_info
 
     exec_remote "mkdir -p $dst" || true
-    time eval rsync --delete -az --info=DEL,REMOVE,STATS "$src/" -e ssh $user@$ip:$dst/ $rsync_args
+    time eval rsync --delete -az "$src/" -e ssh $user@$ip:$dst/ $rsync_args
     log "Code synced\n"
 }
 
@@ -223,15 +223,18 @@ update_loop () {
 
     server_info
 
-    inotifywait -r -m \
-        -e close_write -e delete \
-        --format '%w%f' \
-        --exclude '\.vim-mru|4913|.*.sql.gz|\.git' \
-        "$src" | \
+     fswatch -r \
+       --exclude='\.vim-mru' \
+       --exclude='4913' \
+       --exclude='.*\.sql\.gz' \
+       --exclude='\.git' \
+       --exclude='\.git/.*' \
+        "." | \
         while read f; do
             if [ "$f" == "$syncs" ]; then
                 continue
             fi
+            f=$(echo "$f" | sed "s#^${src}#.#")
             echo "$(dirname "$f")" >> "$syncs"
         done &
 
@@ -253,7 +256,7 @@ update_loop () {
                 fi
 
                 log "Syncing $src/$path\n"
-                eval rsync -a --delete --info=DEL,REMOVE,STATS "$src/$path/" \
+                eval rsync -a --delete "$src/$path/" \
                     -e ssh $user@$ip:"$dst/$path" \
                     $rsync_sync_args
             done
@@ -293,7 +296,7 @@ EOF
 start_service () {
     if [ "$has_systemctl" != "0" ]; then
         stop_service
-        "$me" _run &
+        "$me" _run &>/dev/null &
         local pid=$!
         echo $pid > .drp.pid
         disown $pid
@@ -309,7 +312,7 @@ stop_service () {
     if [ "$has_systemctl" != "0" ]; then
         local pid=$(cat .drp.pid 2>/dev/null);
         if [ "$pid" != "" ] \
-            && ps -p $(cat .drp.pid) -o cmd= | grep "$me" &>/dev/null; then
+            && ps -p $(cat .drp.pid) -o command= | grep "$me" &>/dev/null; then
             kill $pid
         fi
         log "Stopped service\n"
@@ -324,7 +327,7 @@ is_service_running () {
     if [ "$has_systemctl" != "0" ]; then
         local pid=$(cat .drp.pid 2>/dev/null);
         if [ "$pid" != "" ] \
-            && ps -p $(cat .drp.pid) -o cmd= | grep "$me" &>/dev/null; then
+            && ps -p $(cat .drp.pid) -o command= | grep "$me" &>/dev/null; then
             echo 0
             return 0
         fi
