@@ -129,7 +129,7 @@ servicedir="$HOME/.config/systemd/user"
 has_systemctl=$(systemctl --user &>/dev/null; echo $?)
 
 if [ "$host" == "" ]; then
-    host="$sitekey.kzen.pro"
+    host="$sitekey.dev.kzen.pro"
 fi
 
 prov="$provdir/servers/$host/"provision*.sh
@@ -171,7 +171,7 @@ provision () {
     cd "$provdir"
 
     if [ ! -f $prov ]; then
-        ./droplet.sh "$host" ams3 $droplet_size "$image"
+        ./droplet.sh "$host" ams3 $droplet_size "$image" -y
     fi
 
     cd "$src"
@@ -236,7 +236,7 @@ update_loop () {
             fi
             f=$(echo "$f" | sed "s#^${src}#.#")
             echo "$(dirname "$f")" >> "$syncs"
-        done &
+        done >> /tmp/drp-log 2>&1 &
 
         while true; do
             sleep 0.1
@@ -565,6 +565,13 @@ case $1 in
         rport="$2"
         lport="$3"
         ssh -ttt -R $rport:127.0.0.1:${lport:=$rport} "$user"@$ip
+        ;;
+    ltunnel)
+        server_info    # Tunnel traffic. Eg drp tunnel 9000 for xdebug
+
+        rport="$2"
+        lport="$3"
+        ssh -ttt -L $rport:127.0.0.1:${lport:=$rport} "$user"@$ip
         ;;
     eval|ev)           # Execute remote command
         shift
