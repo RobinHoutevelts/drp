@@ -397,7 +397,7 @@ exec_remote_admin () {
 drush () {
     # So we can xdebug drush
     if [ "$drupal_version" == "8" ]; then
-        exec_remote $dst/vendor/bin/drush.launcher $drush_flags --php=/usr/bin/$php -r "$dst/$drush_root" $@
+        exec_remote $dst/vendor/bin/drush $drush_flags --php=/usr/bin/$php -r "$dst/$drush_root" $@
         return
     fi
     exec_remote $php .config/composer/vendor/bin/drush.php $drush_flags --php=/usr/bin/$php -r "$dst/$drush_root" $@
